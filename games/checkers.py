@@ -308,20 +308,19 @@ class CheckersGame(Game):
         """
         Canonical form: always from the perspective of player +1 (black).
         If player is -1 (white), flip the board so white's pieces are encoded
-        as +1/+2 and the board is vertically flipped.
+        as +1/+2 and the board is 180-degree rotated.
+
+        The correct rotation for the 32-square board is sq -> 31 - sq, which
+        maps (row, col) -> (7-row, 7-col). A naive (7-row, col) flip doesn't
+        work because even/odd rows have dark squares on different columns.
         """
         if player == 1:
             return state
         s = state.copy()
-        # Negate all piece values (swap black and white)
-        s.board = [-p for p in state.board]
-        # Vertical flip: row r -> row (7 - r)
+        # 180-degree rotation + negate pieces (swap black/white)
         new_board = [0] * 32
         for sq in range(32):
-            r, c = SQ_TO_RC[sq]
-            flipped_sq = RC_TO_SQ.get((7 - r, c))
-            if flipped_sq is not None:
-                new_board[flipped_sq] = s.board[sq]
+            new_board[31 - sq] = -state.board[sq]
         s.board = new_board
         s.turn = -state.turn
         return s
@@ -349,6 +348,20 @@ class CheckersGame(Game):
             elif piece == -2:
                 planes[3, r, c] = 1.0
         return planes
+
+    def map_canonical_action(self, action: int, player: int) -> int:
+        """
+        Map a canonical-space action back to raw-space for the given player.
+
+        For player +1 (black), canonical = raw, so identity.
+        For player -1 (white), canonical form uses 180-degree rotation
+        (sq -> 31-sq), so we reverse the mapping on both from and to squares.
+        """
+        if player == 1:
+            return action
+        from_sq = action // 32
+        to_sq = action % 32
+        return (31 - from_sq) * 32 + (31 - to_sq)
 
     def action_to_index(self, action: int) -> int:
         return action

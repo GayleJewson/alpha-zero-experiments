@@ -113,9 +113,11 @@ class SelfPlayGame:
                 state_repr = self.game.get_state_representation(sym_state)
                 examples_buffer.append((state_repr, sym_policy, player))
 
-            # Sample action from policy
+            # Sample action from policy (policy is in canonical action space)
             action_idx = np.random.choice(len(policy), p=policy)
-            action = self.game.index_to_action(action_idx)
+            canonical_action = self.game.index_to_action(action_idx)
+            # Map canonical action back to raw state's coordinate space
+            action = self.game.map_canonical_action(canonical_action, player)
 
             state, player = self.game.get_next_state(state, player, action)
             move_count += 1
@@ -170,7 +172,8 @@ class Arena:
                     pi = mcts_old.get_action_probs(state, player, temperature=0, add_noise=False)
 
                 action_idx = np.argmax(pi)
-                action = self.game.index_to_action(action_idx)
+                canonical_action = self.game.index_to_action(action_idx)
+                action = self.game.map_canonical_action(canonical_action, player)
                 state, player = self.game.get_next_state(state, player, action)
                 result = self.game.get_game_ended(state, player)
 

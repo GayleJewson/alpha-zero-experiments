@@ -139,6 +139,19 @@ class Game(ABC):
         """
         return index
 
+    def map_canonical_action(self, action: Action, player: int) -> Action:
+        """
+        Map an action from canonical space back to raw (player-relative) space.
+
+        MCTS operates on canonical states (always from player +1's perspective).
+        When the trainer needs to apply the chosen action to the raw (non-canonical)
+        state, it calls this method to translate the action.
+
+        Default: identity (no mapping needed, e.g. for symmetric games or games
+        where action indices don't depend on player perspective).
+        """
+        return action
+
     def get_valid_moves_mask(self, state: State, player: int) -> np.ndarray:
         """
         Return a boolean mask of shape (action_size,) where True means legal.
